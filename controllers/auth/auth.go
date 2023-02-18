@@ -12,6 +12,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type SignupRequest struct {
+	Email    string
+	Password string
+	Phone    string
+}
+
 func CreateUser(c *fiber.Ctx) error {
 	var DB = database.ConnectDatabase()
 	// usersCollection := collections.GetUsersCollections(DB, os.Getenv("UsersCollectionName"))
@@ -20,7 +26,8 @@ func CreateUser(c *fiber.Ctx) error {
 	user := new(model.User)
 	defer cancel()
 
-	err := c.BodyParser(user)
+	req := new(SignupRequest)
+	err := c.BodyParser(req)
 	if err != nil {
 		c.Status(400).JSON(&fiber.Map{
 			"success": false,
@@ -29,20 +36,25 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 		return err
 	}
+	log.Println(req)
 
-	salltedPassword, err := utils.HashPassword(user.Password)
+	if req.Email == "" || req.Password == "" || req.Phone == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid Signup Data")
+	}
+
+	salltedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	postPayload := model.User{
-		Email:     user.Email,
+	user = &model.User{
+		Email:     req.Email,
 		Password:  salltedPassword,
-		Phone:     user.Phone,
+		Phone:     req.Phone,
 		CreatedAt: time.Now()}
 
-	log.Println(postPayload)
-	result, err := usersCollection.InsertOne(ctx, postPayload)
+	log.Println(user)
+	result, err := usersCollection.InsertOne(ctx, user)
 	if err != nil {
 		c.Status(400).JSON(&fiber.Map{
 			"success": false,
