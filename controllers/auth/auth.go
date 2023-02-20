@@ -8,6 +8,7 @@ import (
 	"fiber/utils"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -84,8 +85,8 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func Login(c *fiber.Ctx) error {
-	req := new(LoginRequest)
-	err := c.BodyParser(req)
+	loginRequest := new(LoginRequest)
+	err := c.BodyParser(loginRequest)
 	if err != nil {
 		c.Status(400).JSON(&fiber.Map{
 			"success": false,
@@ -100,11 +101,19 @@ func Login(c *fiber.Ctx) error {
 	defer cancel()
 
 	var response primitive.M
-
-	user, err := usersCollection.FindOne(ctx, bson.D{{"email", req.Email}}).Decode(&response)
+	query := bson.M{"email": strings.ToLower(loginRequest.Email)}
+	err = usersCollection.FindOne(ctx, query).Decode(&response)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	
+	c.Status(201).JSON(&fiber.Map{
+		"success": true,
+		"message": "Successfully Found User",
+		"data":    response,
+		response.password = ""
+	})
 
 	return nil
 }

@@ -28,6 +28,7 @@ func main() {
 	})
 
 	app.Post("/createUser", auth.CreateUser)
+	app.Post("/login", auth.Login)
 
 	app.Listen(":8001")
 }
